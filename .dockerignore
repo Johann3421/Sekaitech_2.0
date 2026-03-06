@@ -1,0 +1,34 @@
+# ─── Version control ──────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ─── Local env files (secrets never go into the image) ────────
+.env
+.env.local
+.env.*.local
+
+# ─── Dev / build artefacts ────────────────────────────────────
+node_modules
+.next
+out
+
+# ─── Docs ─────────────────────────────────────────────────────
+README.md
+DEPLOY.md
+*.md
+
+# ─── IDE & OS ─────────────────────────────────────────────────
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# ─── Test & lint ──────────────────────────────────────────────
+coverage
+.eslintcache
+
+# Dockerfiles and compose files must NOT be excluded — keep them in the build context
+## If you have local-only overrides (e.g. Dockerfile.local), add them explicitly instead:
+## Dockerfile.local
+## docker-compose.override.yml

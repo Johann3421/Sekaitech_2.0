@@ -1,0 +1,69 @@
+### Node / JavaScript
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+### Next.js build / output
+.next/
+out/
+.next/cache/
+.next/standalone/
+build/
+dist/
+
+### Local env files (secrets) — DO NOT COMMIT
+.env
+.env.*.local
+.env.local
+.env.production
+.env.production.local
+
+### dotenv and secret files
+.env.test
+local.env
+
+### Prisma / local DB
+prisma/dev.db
+*.sqlite
+*.sqlite3
+*.db
+
+### Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+### OS / Editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+### Coverage / cache
+coverage/
+.cache/
+.parcel-cache/
+.turbo/
+/.vercel
+/.vercel_build_output
+
+### TypeScript
+*.tsbuildinfo
+
+### Docker (local overrides)
+docker-compose.override.yml
+docker-compose.*.local.yml
+
+### Temporary files
+*.tgz
+*.log
+tmp/
+temp/
+
+### Keep examples
+!*.example

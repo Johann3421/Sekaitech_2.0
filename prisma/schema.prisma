@@ -1,0 +1,484 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== CONFIGURACIÓN GLOBAL ====================
+model GlobalSettings {
+  id                    Int      @id @default(1)
+  exchangeRate          Decimal  @db.Decimal(8, 4) @default(3.75)
+  storeName             String   @default("Hyper-Logic")
+  storePhone            String?
+  storeEmail            String?
+  storeAddress          String?
+  storeMapUrl           String?
+  taxRate               Decimal  @db.Decimal(5, 4) @default(0.18)
+  shippingFreeThreshold Decimal  @db.Decimal(10, 2) @default(299.00)
+  updatedAt             DateTime @updatedAt
+
+  @@map("global_settings")
+}
+
+// ==================== BANNERS / CMS ====================
+model Banner {
+  id             String     @id @default(cuid())
+  type           BannerType
+  title          String?
+  subtitle       String?
+  imageUrl       String?
+  mobileImageUrl String?
+  linkUrl        String?
+  linkText       String?
+  bgColor        String?
+  textColor      String?
+  active         Boolean    @default(true)
+  position       Int        @default(0)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([type, active])
+  @@map("banners")
+}
+
+// ==================== AUTH ====================
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String?
+  role          UserRole  @default(CUSTOMER)
+  phone         String?
+  avatar        String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  orders   Order[]
+  addresses Address[]
+  tickets  Ticket[]
+  reviews  Review[]
+  wishlist WishlistItem[]
+  pcBuilds PCBuild[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ==================== CATÁLOGO ====================
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  icon        String?
+  image       String?
+  parentId    String?
+  parent      Category?  @relation("SubCategories", fields: [parentId], references: [id])
+  children    Category[] @relation("SubCategories")
+  products    Product[]
+  position    Int        @default(0)
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+
+  @@map("categories")
+}
+
+model Brand {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  logo     String?
+  country  String?
+  products Product[]
+
+  @@map("brands")
+}
+
+model Product {
+  id              String           @id @default(cuid())
+  name            String
+  slug            String           @unique
+  description     String           @db.Text
+  shortDesc       String?
+  priceUSD        Decimal          @db.Decimal(10, 2)
+  comparePriceUSD Decimal?         @db.Decimal(10, 2)
+  costUSD         Decimal?         @db.Decimal(10, 2)
+  sku             String           @unique
+  stock           Int              @default(0)
+  lowStockAlert   Int              @default(5)
+  featured        Boolean          @default(false)
+  published       Boolean          @default(true)
+  condition       ProductCondition @default(NEW)
+  warranty        String?
+  model3dUrl      String?
+  weight          Float?
+  metaTitle       String?
+  metaDesc        String?
+  categoryId      String
+  category        Category         @relation(fields: [categoryId], references: [id])
+  brandId         String?
+  brand           Brand?           @relation(fields: [brandId], references: [id])
+  images          ProductImage[]
+  specs           ProductSpec[]
+  tags            Tag[]
+  reviews         Review[]
+  orderItems      OrderItem[]
+  wishlistItems   WishlistItem[]
+  pcBuildItems    PCBuildItem[]
+  compatibility   ProductCompatibility?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([featured, published])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  alt       String?
+  position  Int     @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model ProductSpec {
+  id        String  @id @default(cuid())
+  key       String
+  value     String
+  unit      String?
+  position  Int     @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_specs")
+}
+
+// ==================== COMPATIBILIDAD PC BUILDER ====================
+model ProductCompatibility {
+  id        String  @id @default(cuid())
+  productId String  @unique
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  socket     String?
+  tdpWatts   Int?
+  chipset    String?
+  memoryType String?
+  memorySlots Int?
+  maxMemoryGB Int?
+  formFactor  String?
+  pciSlots    Json?
+
+  ramType       String?
+  ramSpeedMHz   Int?
+  ramCapacityGB Int?
+
+  gpuTdpWatts  Int?
+  pciInterface String?
+  gpuLengthMM  Int?
+
+  psuWatts      Int?
+  psuEfficiency String?
+  psuFormFactor String?
+
+  storageInterface  String?
+  storageCapacityGB Int?
+
+  caseFormFactor  String?
+  caseMaxGPUMM    Int?
+  caseMaxCoolerMM Int?
+
+  coolerSocketsSupported String[]
+  coolerHeightMM         Int?
+
+  @@map("product_compatibility")
+}
+
+model PSURecommendation {
+  id          String @id @default(cuid())
+  minWatts    Int
+  maxWatts    Int
+  recommended Int
+  tier        String
+
+  @@map("psu_recommendations")
+}
+
+// ==================== PC BUILDER BUILDS ====================
+model PCBuild {
+  id         String      @id @default(cuid())
+  name       String      @default("Mi Build")
+  totalUSD   Decimal     @db.Decimal(10, 2) @default(0)
+  totalWatts Int         @default(0)
+  isPublic   Boolean     @default(false)
+  shareCode  String      @unique @default(cuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items      PCBuildItem[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@map("pc_builds")
+}
+
+model PCBuildItem {
+  id        String  @id @default(cuid())
+  slot      PCSlot
+  quantity  Int     @default(1)
+  buildId   String
+  build     PCBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([buildId, slot])
+  @@map("pc_build_items")
+}
+
+// ==================== PEDIDOS ====================
+model Order {
+  id                   String      @id @default(cuid())
+  orderNumber          String      @unique
+  status               OrderStatus @default(PENDING)
+  payStatus            PayStatus   @default(UNPAID)
+  type                 OrderType   @default(DELIVERY)
+  subtotalUSD          Decimal     @db.Decimal(10, 2)
+  discountUSD          Decimal     @db.Decimal(10, 2) @default(0)
+  shippingUSD          Decimal     @db.Decimal(10, 2) @default(0)
+  taxUSD               Decimal     @db.Decimal(10, 2)
+  totalUSD             Decimal     @db.Decimal(10, 2)
+  exchangeRateSnapshot Decimal     @db.Decimal(8, 4)
+  totalPEN             Decimal     @db.Decimal(10, 2)
+  currency             String      @default("PEN")
+  payMethod            String?
+  notes                String?
+  shippingAddress      Json?
+  userId               String?
+  user                 User?       @relation(fields: [userId], references: [id])
+  items                OrderItem[]
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  quantity  Int
+  priceUSD  Decimal @db.Decimal(10, 2)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+model Address {
+  id         String  @id @default(cuid())
+  firstName  String
+  lastName   String
+  phone      String
+  address1   String
+  address2   String?
+  district   String
+  province   String
+  department String
+  isDefault  Boolean @default(false)
+  userId     String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+// ==================== RESEÑAS ====================
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  title     String?
+  body      String   @db.Text
+  verified  Boolean  @default(false)
+  images    String[]
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([productId, userId])
+  @@map("reviews")
+}
+
+// ==================== WISHLIST ====================
+model WishlistItem {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([productId, userId])
+  @@map("wishlist_items")
+}
+
+// ==================== TICKETS DE SOPORTE ====================
+model Ticket {
+  id         String         @id @default(cuid())
+  ticketCode String         @unique
+  subject    String
+  category   TicketCategory
+  status     TicketStatus   @default(OPEN)
+  priority   TicketPriority @default(MEDIUM)
+  orderId    String?
+  userId     String
+  user       User           @relation(fields: [userId], references: [id])
+  messages   TicketMessage[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("tickets")
+}
+
+model TicketMessage {
+  id          String   @id @default(cuid())
+  body        String   @db.Text
+  attachments String[]
+  isStaff     Boolean  @default(false)
+  authorName  String
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@map("ticket_messages")
+}
+
+// ==================== MISCELÁNEOS ====================
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  products Product[]
+
+  @@map("tags")
+}
+
+// ==================== ENUMS ====================
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum BannerType {
+  TOP_BAR
+  HERO
+  HERO_SECONDARY
+  CENTER_MOBILE
+  SIDEBAR
+}
+
+enum ProductCondition {
+  NEW
+  REFURBISHED
+  OPEN_BOX
+}
+
+enum PCSlot {
+  CPU
+  MOTHERBOARD
+  RAM
+  GPU
+  STORAGE
+  PSU
+  CASE
+  COOLER
+  EXTRA
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum OrderType {
+  DELIVERY
+  PICKUP
+}
+
+enum PayStatus {
+  UNPAID
+  PAID
+  PARTIALLY_PAID
+  REFUNDED
+}
+
+enum TicketCategory {
+  ORDER
+  WARRANTY
+  TECHNICAL
+  BILLING
+  GENERAL
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}

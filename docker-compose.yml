@@ -1,0 +1,91 @@
+version: "3.9"
+
+# ═══════════════════════════════════════════════════════════════
+#  Hyper-Logic – Docker Compose (Dokploy / self-hosted)
+# ═══════════════════════════════════════════════════════════════
+#
+#  Required env vars (set in Dokploy UI or a local .env file):
+#    POSTGRES_PASSWORD     – database password (required)
+#    NEXTAUTH_URL          – public URL of the app, e.g. https://shop.example.com
+#    NEXTAUTH_SECRET       – random 32-char secret (openssl rand -base64 32)
+#    NEXT_PUBLIC_APP_URL   – same as NEXTAUTH_URL (baked into the build)
+#
+#  Optional (have sensible defaults):
+#    POSTGRES_DB           – default: hyperlogic
+#    POSTGRES_USER         – default: postgres
+#    NEXT_PUBLIC_STORE_NAME
+#    NEXT_PUBLIC_DEFAULT_CURRENCY
+#    NEXT_PUBLIC_GOOGLE_MAPS_EMBED_URL
+#    CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET
+#    PORT                  – host port to expose the app (default: 3000)
+# ═══════════════════════════════════════════════════════════════
+
+services:
+
+  # ─── PostgreSQL ─────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-hyperlogic}
+      POSTGRES_USER:     ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  # ─── Next.js Application ────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # NEXT_PUBLIC_* vars MUST be provided as build args because
+      # Next.js bakes them into the bundle at compile time.
+      args:
+        NEXT_PUBLIC_APP_URL:                ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        NEXT_PUBLIC_STORE_NAME:             ${NEXT_PUBLIC_STORE_NAME:-Hyper-Logic}
+        NEXT_PUBLIC_DEFAULT_CURRENCY:       ${NEXT_PUBLIC_DEFAULT_CURRENCY:-PEN}
+        NEXT_PUBLIC_GOOGLE_MAPS_EMBED_URL:  ${NEXT_PUBLIC_GOOGLE_MAPS_EMBED_URL:-}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # ── Database ──────────────────────────────────────────────
+      DATABASE_URL: >-
+        postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-hyperlogic}
+
+      # ── Auth ──────────────────────────────────────────────────
+      NEXTAUTH_URL:    ${NEXTAUTH_URL:?NEXTAUTH_URL is required}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}
+
+      # ── Public (runtime fallback, already baked into bundle) ──
+      NEXT_PUBLIC_APP_URL:               ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_STORE_NAME:            ${NEXT_PUBLIC_STORE_NAME:-Hyper-Logic}
+      NEXT_PUBLIC_DEFAULT_CURRENCY:      ${NEXT_PUBLIC_DEFAULT_CURRENCY:-PEN}
+      NEXT_PUBLIC_GOOGLE_MAPS_EMBED_URL: ${NEXT_PUBLIC_GOOGLE_MAPS_EMBED_URL:-}
+
+      # ── Cloudinary (optional – for image uploads) ─────────────
+      CLOUDINARY_CLOUD_NAME:  ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY:     ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET:  ${CLOUDINARY_API_SECRET:-}
+
+    ports:
+      - "${PORT:-3000}:3000"
+    networks:
+      - app_network
+
+# ─── Volumes & Networks ─────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge
