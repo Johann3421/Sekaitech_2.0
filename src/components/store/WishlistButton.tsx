@@ -22,8 +22,18 @@ export function WishlistButton({ productId, className }: WishlistButtonProps) {
         const res = await fetch(`/api/wishlist?productId=${encodeURIComponent(productId)}`)
         if (!res.ok) return
         const data = await res.json()
-        if (mounted && typeof data.wishlisted === 'boolean') {
-          setWishlisted(data.wishlisted)
+        // If server reports authenticated:false (no session), fall back to localStorage
+        if (mounted) {
+          if (data && data.authenticated === false) {
+            try {
+              const local = JSON.parse(localStorage.getItem('local_wishlist') || '[]') as string[]
+              setWishlisted(local.includes(productId))
+            } catch {
+              setWishlisted(false)
+            }
+          } else if (typeof data.wishlisted === 'boolean') {
+            setWishlisted(data.wishlisted)
+          }
         }
       } catch {
         // Silent fallback: wishlist still works on explicit click.
@@ -48,6 +58,27 @@ export function WishlistButton({ productId, className }: WishlistButtonProps) {
       })
 
       if (!res.ok) {
+        // If user is not authenticated (401), fallback to a local wishlist stored in localStorage
+        if (res.status === 401) {
+          try {
+            const raw = localStorage.getItem('local_wishlist') || '[]'
+            const list = JSON.parse(raw) as string[]
+            if (wishlisted) {
+              const next = list.filter((id) => id !== productId)
+              localStorage.setItem('local_wishlist', JSON.stringify(next))
+            } else {
+              list.push(productId)
+              localStorage.setItem('local_wishlist', JSON.stringify(list))
+            }
+            setWishlisted(!wishlisted)
+            toast.success(wishlisted ? 'Eliminado de tu lista de deseos (local)' : 'Agregado a tu lista de deseos (local)')
+            return
+          } catch (e) {
+            const data = await res.json().catch(() => ({}))
+            throw new Error(data.error || 'Error al actualizar la lista de deseos')
+          }
+        }
+
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Error al actualizar la lista de deseos')
       }
