@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Heart } from 'lucide-react'
 import { toast } from '@/components/ui/Toast'
@@ -14,6 +15,7 @@ interface WishlistButtonProps {
 export function WishlistButton({ productId, className }: WishlistButtonProps) {
   const [wishlisted, setWishlisted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     let mounted = true
@@ -72,6 +74,9 @@ export function WishlistButton({ productId, className }: WishlistButtonProps) {
             }
             setWishlisted(!wishlisted)
             toast.success(wishlisted ? 'Eliminado de tu lista de deseos (local)' : 'Agregado a tu lista de deseos (local)')
+            try {
+              router.refresh()
+            } catch {}
             return
           } catch (e) {
             const data = await res.json().catch(() => ({}))
@@ -84,6 +89,9 @@ export function WishlistButton({ productId, className }: WishlistButtonProps) {
       }
 
       setWishlisted(!wishlisted)
+      try {
+        router.refresh()
+      } catch {}
       toast.success(
         wishlisted
           ? 'Eliminado de tu lista de deseos'
