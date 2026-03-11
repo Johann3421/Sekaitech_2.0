@@ -48,7 +48,7 @@ export default async function AdminReportsPage() {
     where: { id: { in: productIds } },
     select: { id: true, name: true, slug: true },
   });
-  const productMap = new Map(products.map((p) => [p.id, p]));
+  const productMap = new Map<string, any>(products.map((p: any) => [p.id, p]));
 
   const totalRevenue = ordersByStatus.reduce(
     (sum, s) => sum + Number(s._sum.totalUSD || 0),
