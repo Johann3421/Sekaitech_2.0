@@ -59,8 +59,14 @@ async function main() {
   const adminPass = await bcrypt.hash('Admin123!', 12);
   const customerPass = await bcrypt.hash('Customer123!', 12);
 
-  const admin = await prisma.user.create({
-    data: {
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@hyperlogic.pe' },
+    update: {
+      name: 'Admin HyperLogic',
+      password: adminPass,
+      role: 'ADMIN',
+    },
+    create: {
       name: 'Admin HyperLogic',
       email: 'admin@hyperlogic.pe',
       password: adminPass,
@@ -74,8 +80,10 @@ async function main() {
     { name: 'María García', email: 'maria@example.com' },
     { name: 'Luis Torres', email: 'luis@example.com' },
   ]) {
-    const u = await prisma.user.create({
-      data: { ...c, password: customerPass, role: 'CUSTOMER' },
+    const u = await prisma.user.upsert({
+      where: { email: c.email },
+      update: { name: c.name, password: customerPass, role: 'CUSTOMER' },
+      create: { ...c, password: customerPass, role: 'CUSTOMER' },
     });
     customers.push(u);
   }
@@ -97,7 +105,11 @@ async function main() {
   ];
   const categories: Record<string, any> = {};
   for (const cat of categoryData) {
-    categories[cat.slug] = await prisma.category.create({ data: cat });
+    categories[cat.slug] = await prisma.category.upsert({
+      where: { slug: cat.slug },
+      update: { name: cat.name, icon: cat.icon, image: cat.image, position: cat.position },
+      create: cat,
+    });
   }
   console.log('✅ Categories (11)');
 
@@ -121,7 +133,11 @@ async function main() {
   ];
   const brands: Record<string, any> = {};
   for (const b of brandData) {
-    brands[b.slug] = await prisma.brand.create({ data: b });
+    brands[b.slug] = await prisma.brand.upsert({
+      where: { slug: b.slug },
+      update: { name: b.name, country: b.country },
+      create: b,
+    });
   }
   console.log('✅ Brands (15)');
 
@@ -646,8 +662,22 @@ async function main() {
   ];
 
   for (const p of productSeed) {
-    const product = await prisma.product.create({
-      data: {
+    await prisma.product.upsert({
+      where: { slug: p.slug },
+      update: {
+        name: p.name,
+        description: p.description,
+        priceUSD: p.priceUSD,
+        comparePriceUSD: p.comparePriceUSD ?? undefined,
+        sku: p.sku,
+        stock: p.stock,
+        featured: p.featured ?? false,
+        published: true,
+        condition: 'NEW',
+        categoryId: categories[p.categorySlug].id,
+        brandId: brands[p.brandSlug]?.id,
+      },
+      create: {
         name: p.name,
         slug: p.slug,
         description: p.description,
