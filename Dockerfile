@@ -25,9 +25,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build-time args and env (DATABASE_URL must be available if Prisma is used during build)
+# Build-time args and env
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
+# Skip real DB calls during Next.js static generation
+ENV SKIP_DB_DURING_BUILD=1
 
 # ── Build-time public env vars (baked into the bundle) ────────
 ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -43,6 +45,15 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npx prisma generate
 RUN npm run build
+
+# Compile seed.ts → seed.js so the runner can execute it without ts-node
+RUN node -e "\
+  const ts = require('./node_modules/typescript');\
+  const fs = require('fs');\
+  const src = fs.readFileSync('./prisma/seed.ts', 'utf8');\
+  const result = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.CommonJS, esModuleInterop: true, target: ts.ScriptTarget.ES2017 } });\
+  fs.writeFileSync('./prisma/seed.js', result.outputText);\
+"
 
 # ─────────────────────────────────────────────────────────────
 # Stage 4 – Production runner (minimal image)
@@ -70,6 +81,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma         ./no
 
 # ── Prisma CLI (for "migrate deploy" at container startup) ────
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma          ./node_modules/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcryptjs         ./node_modules/bcryptjs
 
 # ── Entrypoint ────────────────────────────────────────────────
 COPY --chown=nextjs:nodejs scripts/docker-entrypoint.sh ./docker-entrypoint.sh

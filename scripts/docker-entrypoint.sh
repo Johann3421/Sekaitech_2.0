@@ -14,7 +14,7 @@ echo "▶ Running database migrations..."
 node ./node_modules/prisma/build/index.js migrate deploy
 
 echo "▶ Seeding database (idempotent)..."
-node ./node_modules/prisma/build/index.js db seed || echo "⚠ Seed skipped or already applied"
+node ./prisma/seed.js || echo "⚠ Seed skipped or already applied"
 
 echo "▶ Starting Next.js server..."
 exec node server.js
