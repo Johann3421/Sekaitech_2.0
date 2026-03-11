@@ -125,7 +125,7 @@ export default async function OrdersPage() {
 
               <div className="border-t border-void-600 px-5 py-4 space-y-3">
                 {/* Order items */}
-                {order.items.map((item) => (
+                {order.items.map((item: any) => (
                   <div
                     key={item.id}
                     className="flex items-center gap-3 text-sm"
