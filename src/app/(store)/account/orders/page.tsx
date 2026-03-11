@@ -86,7 +86,7 @@ export default async function OrdersPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => (
+          {orders.map((order: any) => (
             <details
               key={order.id}
               className="group bg-gradient-card border border-void-500 rounded-2xl overflow-hidden"
