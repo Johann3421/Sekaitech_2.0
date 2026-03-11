@@ -114,6 +114,8 @@ Para las variables de build (`NEXT_PUBLIC_*`), Dokploy las expone como **Build A
 2. Habilita **HTTPS / Let's Encrypt**.
 3. Proxy port: `3000` (servicio `app`).
 
+Nota: Si el puerto `3000` en el host ya está en uso, el repositorio contiene una variable `PORT` para cambiar el puerto exposado en el host. Por defecto el proyecto ahora propone mapear el host al puerto `3006` (`3006:3000`). Puedes sobrescribir esto en Dokploy estableciendo `PORT=3006` en las variables de entorno o dejando la configuración por defecto.
+
 ### 4.4 Hacer el primer deploy
 
 Haz clic en **Deploy** en Dokploy.
