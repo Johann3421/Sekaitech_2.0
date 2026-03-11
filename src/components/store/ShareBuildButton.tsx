@@ -16,7 +16,7 @@ export function ShareBuildButton({ buildId, className }: ShareBuildButtonProps) 
 
   async function handleShare() {
     const url = buildId
-      ? `${window.location.origin}/pc-builder/shared/${buildId}`
+      ? `${window.location.origin}/builds/${buildId}`
       : window.location.href
 
     try {
