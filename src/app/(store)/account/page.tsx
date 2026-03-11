@@ -96,7 +96,7 @@ export default async function AccountPage() {
           { href: "/account/orders", icon: Package, label: "Mis Pedidos", color: "text-cyber-400" },
           { href: "/account/tickets", icon: MessageSquare, label: "Soporte", color: "text-plasma-400" },
           { href: "/account/wishlist", icon: Heart, label: "Mi Wishlist", color: "text-danger-400" },
-        ].map((link) => (
+        ].map((link: any) => (
           <Link
             key={link.href}
             href={link.href}
@@ -134,7 +134,7 @@ export default async function AccountPage() {
             </div>
           ) : (
             <div className="divide-y divide-void-700/50">
-              {recentOrders.map((order) => (
+              {recentOrders.map((order: any) => (
                 <Link
                   key={order.id}
                   href="/account/orders"
@@ -181,7 +181,7 @@ export default async function AccountPage() {
             </div>
           ) : (
             <div className="divide-y divide-void-700/50">
-              {recentTickets.map((ticket) => (
+              {recentTickets.map((ticket: any) => (
                 <Link
                   key={ticket.id}
                   href={`/account/tickets/${ticket.id}`}
