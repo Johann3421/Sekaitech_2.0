@@ -108,6 +108,20 @@ En la pestaña **Environment** del servicio, agrega **todas** las variables list
 
 Para las variables de build (`NEXT_PUBLIC_*`), Dokploy las expone como **Build Arguments** automáticamente si las defines en la misma pantalla de entorno — o puedes especificarlas explícitamente en la pestaña **Build Args**.
 
+**Importante — `DATABASE_URL` durante build**
+
+Algunas llamadas a la base de datos (Prisma) se ejecutan durante la fase de compilación para generar páginas estáticas. Por eso el builder necesita una `DATABASE_URL` válida en tiempo de build. En Dokploy puedes pasarla de dos formas:
+
+- Definiendo `DATABASE_URL` directamente en **Build Args** con el valor:
+
+```
+postgresql://<DB_USER>:<DB_PASS>@<DB_HOST>:5432/<DB_NAME>
+```
+
+- O bien definir `POSTGRES_USER`, `POSTGRES_PASSWORD` y `POSTGRES_DB` en el entorno y usar el `DATABASE_URL` formado por la plantilla del `docker-compose.yml` (la plataforma debe soportar expandir esas variables como build-arg).
+
+Si `DATABASE_URL` no está presente en build, verás errores como `Environment variable not found: DATABASE_URL` y las páginas estáticas no podrán generarse correctamente.
+
 ### 4.3 Configurar el dominio
 
 1. Pestaña **Domains** → agrega tu dominio.

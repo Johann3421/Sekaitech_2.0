@@ -25,6 +25,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Build-time args and env (DATABASE_URL must be available if Prisma is used during build)
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
+
 # ── Build-time public env vars (baked into the bundle) ────────
 ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
 ARG NEXT_PUBLIC_STORE_NAME=Hyper-Logic

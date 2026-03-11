@@ -52,6 +52,9 @@ services:
         NEXT_PUBLIC_STORE_NAME:             ${NEXT_PUBLIC_STORE_NAME:-Hyper-Logic}
         NEXT_PUBLIC_DEFAULT_CURRENCY:       ${NEXT_PUBLIC_DEFAULT_CURRENCY:-PEN}
         NEXT_PUBLIC_GOOGLE_MAPS_EMBED_URL:  ${NEXT_PUBLIC_GOOGLE_MAPS_EMBED_URL:-}
+        # Provide a build-time DATABASE_URL so Prisma can run during build (SSG data collection)
+        DATABASE_URL: >-
+          postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-hyperlogic}
     restart: unless-stopped
     depends_on:
       db:
