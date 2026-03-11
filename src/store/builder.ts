@@ -36,7 +36,7 @@ export const useBuilderStore = create<BuilderState>()(
         set((state) => {
           const newSlots = { ...state.slots, [slot]: product }
           const totalUSD = Object.values(newSlots).reduce(
-            (sum, p) => sum + (p?.priceUSD ?? 0),
+            (sum, p) => sum + Number(p?.priceUSD ?? 0),
             0
           )
           return { slots: newSlots, totalUSD }
@@ -47,7 +47,7 @@ export const useBuilderStore = create<BuilderState>()(
           const newSlots = { ...state.slots }
           delete newSlots[slot]
           const totalUSD = Object.values(newSlots).reduce(
-            (sum, p) => sum + (p?.priceUSD ?? 0),
+            (sum, p) => sum + Number(p?.priceUSD ?? 0),
             0
           )
           return { slots: newSlots, totalUSD }

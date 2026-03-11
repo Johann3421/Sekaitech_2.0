@@ -182,7 +182,7 @@ export function BuildSummary() {
               </div>
               {product && (
                 <span className="text-sm font-mono text-cyber-400 tabular-nums flex-shrink-0">
-                  ${product.priceUSD.toFixed(2)}
+                  ${Number(product.priceUSD).toFixed(2)}
                 </span>
               )}
             </div>

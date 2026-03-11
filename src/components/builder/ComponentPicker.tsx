@@ -92,7 +92,7 @@ export function ComponentPicker({ open, onClose, slot, label }: ComponentPickerP
       id: p.id,
       name: p.name,
       slug: p.slug,
-      priceUSD: p.priceUSD,
+      priceUSD: Number(p.priceUSD ?? 0),
       imageUrl: p.images?.[0]?.url,
       sku: p.sku,
       stock: p.stock,
